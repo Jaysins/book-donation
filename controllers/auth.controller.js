@@ -77,6 +77,7 @@ async function login(req, res, next) {
             id: userInfo._id.toString(),
             name: userInfo.firstname + " " + userInfo.lastname
         }
+        console.log(userInfo._id);
 
         console.log(tokenPayload);
         const access_token = await jwt.sign(tokenPayload, process.env.SECRET_KEY, { expiresIn: "2h" })
