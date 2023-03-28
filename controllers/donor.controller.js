@@ -8,7 +8,7 @@ async function getDonor(req, res, next){
 
     try{
 
-        const donor = await bookModel.findOne({email:email}).populate('author').exec()
+        const donor = await bookModel.findOne({email:email}).populate().exec()
 
         if(!donor){
             return res.status(403).json({
@@ -40,7 +40,8 @@ async function getDonorBooks(req, res, next){
             })
         }
 
-        const books = await bookModel.findOne({_id:userId.id}).populate().exec()
+        const books = await bookModel.findOne({_id:userId.id}).populate("author", "title").exec()
+        console.log(books);
         
         return res.status(201).json({
             success:true,
@@ -102,7 +103,6 @@ async function updateDonorEmail(req,res,next){
         return res.json({
             success:true,
             message:`Email updated successfully`,
-            email:emailUpdate
         })
     }
     
@@ -112,23 +112,22 @@ async function updateDonorEmail(req,res,next){
 }
 async function updateDonorPassword(req,res,next){
     const {password} = req.body
-    const{id} = req.params.id
+    const{id} = req.params
     try{
-        const donorPassword = await userModel.findOne({_id:id})
+        const isDonorExist = await userModel.findOne({_id:id}).exec()
 
-        if(!donorPassword){
+        if(!isDonorExist){
             return res.status(400).json({
                 success:false,
                 message:`password field required`
             })
         }
 
-        const passwordUpdate = await userModel.updateOne({_id:id},{donorPasswod:password})
+        const passwordUpdate = await userModel.updateOne({_id:id}, {password:password}, {new:true, useFindAndModify:false, upsert:false})
 
         return res.json({
             success:true,
             message:`Password updated successfully`,
-            password:passwordUpdate
         })
 
     }
@@ -140,21 +139,21 @@ async function updateDonorPassword(req,res,next){
 
 async function deleteDonor(req, res, next){
     
-    const {id}= req.params.id
+    const {id}= req.params
     try{
-        if(!id){
+        const getUser = await userModel.findOne({_id:id}).exec()
+        if(!getUser){
             return res.status(400).json({
                 success:false,
                 message:`Donor not found`
             })
         }
 
-        const results = await userModel.deleteOne({_id:id})
+        const results = await userModel.findOneAndRemove({_id:id})
 
         return res.json({
             status:'success',
-            message:"Donor deleted successfully",
-            data:results
+            message:"Donor deleted successfully"
         })
     }
     catch (error){

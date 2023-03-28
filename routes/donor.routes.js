@@ -11,7 +11,7 @@ const {
 } = require('../controllers/donor.controller')
 
 donorRouter.get('/profile',verifyAuth,getDonor)
-donorRouter.get('/books?', verifyAuth, getDonorBooks)
+donorRouter.get('/books/:id', verifyAuth, getDonorBooks)
 donorRouter.get('/donors', getAllDonor)
 donorRouter.patch('/updateEmail/:id', verifyAuth,updateDonorEmail)
 donorRouter.patch('/updatePassword/:id', verifyAuth, updateDonorPassword)

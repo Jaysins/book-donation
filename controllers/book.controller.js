@@ -2,7 +2,8 @@ const bookModel = require('../models/book.schema');
 
 const {AuthForbiddenException, NotFoundException} = require('../@helpers/errorHandlers')
 
-const jwt = require('jsonwebtoken')
+const jwt = require('jsonwebtoken');
+const userModel = require('../models/auth.schema');
 
 async function donateBook(req, res, next){
     const {title, content} = req.body
@@ -56,23 +57,24 @@ async function getBooks(req, res, next){
 }
 
 async function getBook(req, res, next){
-    const {id} = req.params.id
+    const {id} = req.params
     try{
         
-        const book = await bookModel.findOne({_id:id}).exec()
+        const isDonor = await userModel.findOne({_id:id}).exec()
         console.log(book);
 
-        if(!book){
+        if(!isDonor){
             return res.status(404).json({
                 success:false,
-                message:"book not found"
+                message:"Author has no book"
             })
         }
+
+        
 
         return res.json({
             message:"books",
             success:true,
-            book:book
         })
     }
     catch(error){
