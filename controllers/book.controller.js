@@ -56,11 +56,11 @@ async function getBooks(req, res, next){
 }
 
 async function getBook(req, res, next){
-    const {id} = req.params
-    console.log(id);
+    const {id} = req.params.id
     try{
         
-        const book = await bookModel.findById(id).exec()
+        const book = await bookModel.findOne({_id:id}).exec()
+        console.log(book);
 
         if(!book){
             return res.status(404).json({
@@ -68,6 +68,12 @@ async function getBook(req, res, next){
                 message:"book not found"
             })
         }
+
+        return res.json({
+            message:"books",
+            success:true,
+            book:book
+        })
     }
     catch(error){
         next(error)

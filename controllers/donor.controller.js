@@ -5,6 +5,7 @@ const{NotFoundException, ValidationException} = require('../@helpers/errorHandle
 
 
 async function getDonor(req, res, next){
+
     try{
 
         const donor = await bookModel.findOne({email:email}).populate('author').exec()
@@ -54,7 +55,7 @@ async function getDonorBooks(req, res, next){
 async function getAllDonor(req, res, next){
     try{
 
-        const donor = await bookModel.find().populate('author').exec()
+        const donor = await userModel.find().exec()
 
         if(!donor){
             throw new NotFoundException('donor not found', 404)
@@ -72,20 +73,37 @@ async function getAllDonor(req, res, next){
 }
 
 async function updateDonorEmail(req,res,next){
-    const {email} = req.body.email
+    const {email} = req.body
+    const {id} = req.params
     try{
-        const donorEmail = await userModel.findOne({email:email})
 
-        if(!donorEmail){
+        const isUserExists = await userModel.findOne({_id:id}).exec()
+        if(!isUserExists){
             return res.status(400).json({
                 success:false,
-                message:`email field required`
+                message:` User not found`
             })
         }
+        if(email === ""){
+            return res.status(400).json({
+                success:false,
+                message:`Email is required`
+            })
+        }
+        const emailUpdate = await userModel.updateOne({_id:id},{email:email}, {new:true, useFindAndModify:false, upsert:false})
 
-        const emailUpdate = await userModel.updateOne({_id:id},{donorEmail:email})
-
-        return emailUpdate
+        if(!emailUpdate.acknowledged){
+            return res.status(400).json({
+                success:false,
+                message:`Email update failed`
+            })
+        }
+       
+        return res.json({
+            success:true,
+            message:`Email updated successfully`,
+            email:emailUpdate
+        })
     }
     
     catch(error){
@@ -93,20 +111,26 @@ async function updateDonorEmail(req,res,next){
     }
 }
 async function updateDonorPassword(req,res,next){
-    const {password} = req.body.password
+    const {password} = req.body
+    const{id} = req.params.id
     try{
-        const donorEmail = await userModel.findOne({_id:id})
+        const donorPassword = await userModel.findOne({_id:id})
 
-        if(!donorEmail){
+        if(!donorPassword){
             return res.status(400).json({
                 success:false,
-                message:`email field required`
+                message:`password field required`
             })
         }
 
-        const emailUpdate = await userModel.updateOne({_id:id},{donorPasswod:password})
+        const passwordUpdate = await userModel.updateOne({_id:id},{donorPasswod:password})
 
-        return emailUpdate
+        return res.json({
+            success:true,
+            message:`Password updated successfully`,
+            password:passwordUpdate
+        })
+
     }
     
     catch(error){

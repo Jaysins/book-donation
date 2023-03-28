@@ -13,8 +13,8 @@ const {
 donorRouter.get('/profile',verifyAuth,getDonor)
 donorRouter.get('/books?', verifyAuth, getDonorBooks)
 donorRouter.get('/donors', getAllDonor)
-donorRouter.patch('/update?', verifyAuth,updateDonorEmail)
-donorRouter.patch('/update?', verifyAuth, updateDonorPassword)
-donorRouter.delete('/delete', verifyAuth, deleteDonor)
+donorRouter.patch('/updateEmail/:id', verifyAuth,updateDonorEmail)
+donorRouter.patch('/updatePassword/:id', verifyAuth, updateDonorPassword)
+donorRouter.delete('/delete/:id', verifyAuth, deleteDonor)
 
 module.exports = donorRouter
