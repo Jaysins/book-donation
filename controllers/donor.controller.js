@@ -1,62 +1,68 @@
 const userModel = require('../models/auth.schema')
 const bookModel = require('../models/book.schema')
-const { NotFoundException, ValidationException } = require('../@helpers/errorHandlers')
-
+const {NotFoundException, ValidationException} = require('../@helpers/errorHandlers')
+const bcrypt = require("bcryptjs");
 
 
 async function getDonor(req, res, next) {
-    const { id } = req.params
-    console.log(req.user, "I am req.user");
-        try {
-
-            const donor = await userModel.findById(req.user.id)
-
-            if (!donor) {
-                return res.status(403).json({
-                    success: false,
-                    message: `Donor not found`
-                })
-            }
-            
-            const bookCount = await bookModel.countDocuments({user: req.user.id}).exec()
-
-            return res.json({
-                success: true,
-                donor:donor,
-                bookCount:bookCount
-            })
-        }
-
-        catch (error) {
-            next(error)
-        }
-}
-async function getDonorBooks(req, res, next) {
-    const { id } = req.params
+    const {id} = req.params
     try {
 
-        const userId = await userModel.findById(req.params.id)
-        console.log(userId);
+        const donor = await userModel.findById(req.user.id)
 
-        if (!userId) {
+        if (!donor) {
             return res.status(403).json({
                 success: false,
                 message: `Donor not found`
             })
         }
 
-        const books = await bookModel.find({ id: userId.id }).populate("title").exec()
+        const bookCount = await bookModel.countDocuments({user: req.user.id}).exec()
+
+        return res.json({
+            success: true,
+            message: "Results gotten successfully",
+            data: {
+                firstname: donor.firstname,
+                lastname: donor.lastname,
+                access_role: donor.access_role,
+                email: donor.email,
+                donatedBooks: bookCount
+            }
+        })
+    } catch (error) {
+        next(error)
+    }
+}
+
+async function getDonorBooks(req, res, next) {
+    const userId = req.query.user_id ? req.query.user_id : req.user.id
+
+    console.log(userId)
+    try {
+
+        const user = await userModel.findOne({_id: userId})
+
+        if (!user) {
+            return res.status(403).json({
+                success: false,
+                message: `Donor not found`
+            })
+        }
+
+        const books = await bookModel.find(
+            {user: user.id}).populate("title").exec()
         // console.log(books);
 
         return res.status(201).json({
             success: true,
             books: books
         })
-    }
-    catch (error) {
+    } catch (error) {
         next(error)
     }
 }
+
 async function getAllDonor(req, res, next) {
     try {
 
@@ -70,82 +76,75 @@ async function getAllDonor(req, res, next) {
             success: true,
             donor: donor
         })
-    }
-
-    catch (error) {
+    } catch (error) {
         next(error)
     }
 }
 
-async function updateDonorEmail(req, res, next) {
-    const { email } = req.body
-    const { id } = req.params
-    try {
+async function updateDonorInfo(req, res, next) {
 
-        const isUserExists = await userModel.findOne({ _id: id }).exec()
+    let fieldName = req.query.field
+    let fieldValue = req.body[fieldName]
+    const userId = req.user.id
+    try {
+        if (!fieldValue || fieldValue === "") {
+            return res.status(400).json({
+                success: false,
+                message: `${fieldName} is required`
+            })
+        }
+        const isUserExists = await userModel.findOne({_id: userId}).exec()
+
         if (!isUserExists) {
             return res.status(400).json({
                 success: false,
-                message: ` User not found`
+                message: `User not found`
             })
         }
-        if (email === "") {
-            return res.status(400).json({
-                success: false,
-                message: `Email is required`
-            })
+        if (fieldName === "pwd") {
+            fieldName = "password"
+            fieldValue = await bcrypt.hash(fieldValue, 10)
         }
-        const emailUpdate = await userModel.updateOne({ _id: id }, { email: email }, { new: true, useFindAndModify: false, upsert: false })
+        const updateData = {}
 
-        if (!emailUpdate.acknowledged) {
+        updateData[fieldName] = fieldValue
+
+        console.log(updateData)
+
+        const updatedDonor = await userModel.findOneAndUpdate({_id: userId}, updateData, {
+            new: true,
+            useFindAndModify: false,
+            upsert: false
+        })
+        console.log(updatedDonor)
+
+        if (updatedDonor[fieldName] !== fieldValue) {
             return res.status(400).json({
                 success: false,
-                message: `Email update failed`
+                message: `${fieldName} update failed`
             })
         }
 
         return res.json({
             success: true,
-            message: `Email updated successfully`,
+            message: `${fieldName} updated successfully`,
+            data: {
+                firstname: updatedDonor.firstname,
+                lastname: updatedDonor.lastname,
+                access_role: updatedDonor.access_role,
+                email: updatedDonor.email
+            }
         })
-    }
-
-    catch (error) {
-        next(error)
-    }
-}
-async function updateDonorPassword(req, res, next) {
-    const { password } = req.body
-    const { id } = req.params
-    try {
-        const isDonorExist = await userModel.findOne({ _id: id }).exec()
-
-        if (!isDonorExist) {
-            return res.status(400).json({
-                success: false,
-                message: `password field required`
-            })
-        }
-
-        const passwordUpdate = await userModel.updateOne({ _id: id }, { password: password }, { new: true, useFindAndModify: false, upsert: false })
-
-        return res.json({
-            success: true,
-            message: `Password updated successfully`,
-        })
-
-    }
-
-    catch (error) {
+    } catch (error) {
         next(error)
     }
 }
 
 async function deleteDonor(req, res, next) {
 
-    const { id } = req.params
+    const userId = req.user.id
     try {
-        const getUser = await userModel.findOne({ _id: id }).exec()
+        const getUser = await userModel.findOne({_id: userId}).exec()
         if (!getUser) {
             return res.status(400).json({
                 success: false,
@@ -153,14 +152,13 @@ async function deleteDonor(req, res, next) {
             })
         }
 
-        const results = await userModel.findOneAndRemove({ _id: id })
+        const results = await userModel.findOneAndRemove({_id: userId})
 
         return res.json({
             status: 'success',
             message: "Donor deleted successfully"
         })
-    }
-    catch (error) {
+    } catch (error) {
         next(error)
     }
 }
@@ -170,6 +168,5 @@ module.exports = {
     getDonor,
     getDonorBooks,
     deleteDonor,
-    updateDonorPassword,
-    updateDonorEmail
+    updateDonorInfo
 }

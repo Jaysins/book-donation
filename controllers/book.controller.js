@@ -6,9 +6,8 @@ const jwt = require('jsonwebtoken');
 const userModel = require('../models/auth.schema');
 
 async function donateBook(req, res, next){
-    const {title, content} = req.body
-    const token = req.headers.authorization.split(" ")[1]
-    const author = jwt.verify(token, process.env.SECRET_KEY).name
+    const {title, content, author} = req.body
+    const userId = req.user.id
     try{
 
         if (title.length < 5 || content.length < 10 ) {
@@ -18,13 +17,10 @@ async function donateBook(req, res, next){
             })
         }
 
-        const book = new bookModel({
-            title:title,
-            content:content,
-            author:author
-        })
+        const book = await new bookModel({
+            title:title, content:content, author:author, user: userId
+        }).save()
 
-        await book.save()
         return res.json({
             message:"Book donated successfully",
             success:true,
@@ -59,9 +55,9 @@ async function getBooks(req, res, next){
 async function getBook(req, res, next){
     const {id} = req.params
     try{
-        
+
         const isDonor = await bookModel.findById(req.params.id)
-        
+
         if(!isDonor){
             return res.status(404).json({
                 success:false,
@@ -69,8 +65,8 @@ async function getBook(req, res, next){
             })
         }
 
-        const fetchBookInfo = await bookModel.findById(req.params.id).populate("author", "title")
-        
+        const fetchBookInfo = await bookModel.findById(req.params.id).populate("user")
+
 
         return res.json({
             message:"books",

@@ -16,9 +16,9 @@ async function verifyAuth(req, res, next){
     const token = req.headers.authorization.split(" ")[1]
 
     const splitUser = jwt.verify(token, process.env.SECRET_KEY)
-    console.log(splitUser.name);
-    const email = splitUser.email
-    if(!email){
+    console.log(splitUser);
+    const userId = splitUser.id
+    if(!userId){
         return res.status(401).json({
             success:false,
             message:`Unathorized operation`
@@ -26,8 +26,7 @@ async function verifyAuth(req, res, next){
     }
 
 
-    const auth = await userModel.findOne({email:email}).exec()
-    console.log(splitUser,"I am splituser");
+    const auth = await userModel.findById(userId)
 
     if(!auth){
         return res.status(401).json({

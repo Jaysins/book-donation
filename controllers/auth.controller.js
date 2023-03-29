@@ -16,7 +16,7 @@ async function signup(req, res, next) {
 
         if (user) {
             // Return user already exists
-            return res.status().json({
+            return res.status(409).json({
                 success: false,
                 message: `User already exists. login instead`
             })
@@ -32,14 +32,19 @@ async function signup(req, res, next) {
         })
 
         const { pwd, ...results } = newUser
+        const createdUser = await newUser.save()
+        // console.log(pwd)
+
         res.status(201).json({
             status: 'success',
             message: "user created successfully",
-            data: results._doc
+            data: {
+                firstname: createdUser.firstname,
+                lastname: createdUser.lastname,
+                access_role: createdUser.access_role,
+                email: createdUser.email
+            }
         })
-
-
-        await newUser.save()
         //
     }
     catch (error) {
@@ -83,7 +88,7 @@ async function login(req, res, next) {
         const access_token = await jwt.sign(tokenPayload, process.env.SECRET_KEY, { expiresIn: "2h" })
         return res.status(200).json({
             sucess: true,
-            message: `User has being logged in successfully`,
+            message: "User has being logged in successfully",
             access_token: access_token
         })
 
