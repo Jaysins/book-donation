@@ -1,5 +1,5 @@
 const { InvalidOrExpiredToken, AuthForbiddenException} = require('../@helpers/errorHandlers')
-const authModel = require('../models/auth.schema')
+const userModel = require('../models/auth.schema')
 const bcrypt = require('bcryptjs')
 const jwt = require('jsonwebtoken')
 
@@ -26,7 +26,8 @@ async function verifyAuth(req, res, next){
     }
 
 
-    const auth = await authModel.findOne({email:email}).exec()
+    const auth = await userModel.findOne({email:email}).exec()
+    console.log(splitUser,"I am splituser");
 
     if(!auth){
         return res.status(401).json({
@@ -34,6 +35,8 @@ async function verifyAuth(req, res, next){
             message:`Unauthorized operation`
         })
     }
+    req.user = splitUser
+
     next()
 }
 catch(error){

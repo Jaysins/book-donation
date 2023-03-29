@@ -60,21 +60,22 @@ async function getBook(req, res, next){
     const {id} = req.params
     try{
         
-        const isDonor = await userModel.findOne({_id:id}).exec()
-        console.log(book);
-
+        const isDonor = await bookModel.findById(req.params.id)
+        
         if(!isDonor){
             return res.status(404).json({
                 success:false,
-                message:"Author has no book"
+                message:"Book not found"
             })
         }
 
+        const fetchBookInfo = await bookModel.findById(req.params.id).populate("author", "title")
         
 
         return res.json({
             message:"books",
             success:true,
+            books:fetchBookInfo
         })
     }
     catch(error){

@@ -1,12 +1,15 @@
 const mongoose = require('mongoose');
-// const userModel = require('./auth.schema');
+const userModel = require('./auth.schema');
 
 const bookSchema = new mongoose.Schema({
 
     author:{
         type:String,
-        ref:"user",
         require:true
+    },
+    user: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'user'
     },
     title:{
         type:String,
@@ -20,7 +23,6 @@ const bookSchema = new mongoose.Schema({
         type:Date,
         default:Date.now()
     }
-
 })
 
 const bookModel = mongoose.model('book', bookSchema)
